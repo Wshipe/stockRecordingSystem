@@ -75,12 +75,8 @@ WSGI_APPLICATION = 'srs.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'srswebsite',
-        'USER': 'root',
-        'PASSWORD': 'csc4341',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',  # Default engine
+        'NAME': BASE_DIR / "db.sqlite3",         # Default database name
     }
 }
 
