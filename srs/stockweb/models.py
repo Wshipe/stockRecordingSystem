@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 # Create your models here.
-class CustomerUser(AbstractUser):
+class CustomUser(AbstractUser):
     user_ID = models.BigAutoField(auto_created=True, primary_key=True, serialize=False)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
