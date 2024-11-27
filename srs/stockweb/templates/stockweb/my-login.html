@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-<h1>Login</h1>
-</body>
+
+<h1>Login To SRS</h1>
+
+<form method="POST" autocomplete="off">
+
+    {% csrf_token %}
+    {{loginform.as_p}}
+
+    <input type="submit" value="Login" />
+
+</form>
+
+<a href="{% url 'register' %}" >Don't Have An Account?</a>
+
 </html>
