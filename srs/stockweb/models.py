@@ -23,16 +23,18 @@ class Note(models.Model):
 
     def __str__(self):
         return self.title if self.title else f"Note {self.id}"
-
+    
 class Watchlist(models.Model):
+    Watchlist_ID = models.AutoField(primary_key=True)
     Watchlist_name = models.CharField(max_length= 32)
     Market_Symbol = models.CharField(max_length=10)
     Current_Symbol_price = models.FloatField()
     
 
 class TradHistory(models.Model):
-    #Market symbol from watch list
-
+    #Market symbol from watch list * Unsure of field type
+    Watchlist_ID = models.ForeignKey(Watchlist)
+    
     #Date Stock was bought * copied field from notes table unsure of logic
     Date_Bought = models.DateTimeField(auto_now_add = True)
 
