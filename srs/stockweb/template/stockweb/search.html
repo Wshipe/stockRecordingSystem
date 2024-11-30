@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Search</title>
+</head>
+<body>
+    <h1>Search Stocks or Transactions</h1>
+    <form method="GET" action="{% url 'search' %}">
+        <label>
+            Search Query:
+            <input type="text" name="query" placeholder="Enter stock ticker, sector, or date">
+        </label>
+        <br>
+        <label>
+            Filter By:
+            <select name="filter_type">
+                <option value="ticker">Stock Ticker</option>
+                <option value="sector">Sector</option>
+                <option value="date">Transaction Date</option>
+            </select>
+        </label>
+        <br>
+        <button type="submit">Search</button>
+    </form>
+    <hr>
+    <h2>Search Results</h2>
+    {% if results %}
+    <table>
+        <thead>
+            <tr>
+                <th>Stock Ticker</th>
+                <th>Transaction Type</th>
+                <th>Date</th>
+                <th>Price</th>
+                <th>Shares</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+            <tr>
+                <td>{{ result.stock.ticker }}</td>
+                <td>{{ result.transaction_type }}</td>
+                <td>{{ result.date }}</td>
+                <td>{{ result.price }}</td>
+                <td>{{ result.shares }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form method="GET" action="{% url 'export_to_pdf' %}">
+        <input type="hidden" name="query" value="{{ query }}">
+        <button type="submit">Export to PDF</button>
+    </form>
+    {% else %}
+    <p>No results found.</p>
+    {% endif %}
+</body>
+</html>

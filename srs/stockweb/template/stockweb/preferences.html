@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Notification Preferences</title>
+</head>
+<body>
+    <h1>Notification Preferences</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <label>
+            <input type="checkbox" name="email_notifications" {% if preferences.email_notifications %}checked{% endif %}>
+            Email Notifications
+        </label>
+        <br>
+        <label>
+            <input type="checkbox" name="sms_notifications" {% if preferences.sms_notifications %}checked{% endif %}>
+            SMS Notifications
+        </label>
+        <br>
+        <label>
+            <input type="checkbox" name="in_app_notifications" {% if preferences.in_app_notifications %}checked{% endif %}>
+            In-App Notifications
+        </label>
+        <br>
+        <button type="submit">Save Preferences</button>
+    </form>
+</body>
+</html>
