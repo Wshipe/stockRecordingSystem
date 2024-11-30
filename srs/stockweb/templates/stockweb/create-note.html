@@ -1,0 +1,13 @@
+<!-- dashboard/templates/dashboard/create_note.html -->
+
+{% extends 'stockweb/dashboard.html' %}
+
+{% block content %}
+<h2>Create a New Note</h2>
+<form method="POST" novalidate>
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Save Note</button>
+    <a href="{% url 'notes' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
