@@ -6,3 +6,4 @@ urlpatterns = [
     path('', views.watchlist, name="watchlist"),
     path('', views.transactions, name="transactions"),
 ]
+# comment

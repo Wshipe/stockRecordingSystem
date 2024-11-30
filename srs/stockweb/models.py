@@ -67,3 +67,5 @@ class TradHistory(models.Model):
 
     #Date stock was sold * same as Date_Bought
     Date_Sold = models.DateTimeField(auto_now_add = True)
+
+#comment
