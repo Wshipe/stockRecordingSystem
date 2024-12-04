@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django import forms
 from django.forms.widgets import TextInput, PasswordInput
-from .models import Note, WatchList, WatchListStock
+from .models import Note, WatchList, WatchListStock, Stock, Transaction
 
 
 class CreateUserForm(UserCreationForm):
@@ -42,14 +42,38 @@ class WatchListForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter watch list name'}),
         }
 
-class AddStockForm(forms.Form):
-    stock_id = forms.IntegerField(widget=forms.HiddenInput())  # Hidden field for selected stock
-    watchlist_id = forms.ModelChoiceField(
-        queryset=None,
+class AddStockToWatchListForm(forms.Form):
+    stock = forms.ModelChoiceField(
+        queryset=None,  # Will be set dynamically
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Select Watch List"
+        label="Select Stock"
     )
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, user, watchlist, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['watchlist_id'].queryset = WatchList.objects.filter(user=user)
+        self.fields['stock'].queryset = Stock.objects.exclude(
+            id__in=watchlist.stocks.values_list('stock_id', flat=True)
+        )
+
+
+class StockForm(forms.ModelForm):
+    class Meta:
+        model = Stock
+        fields = ['ticker', 'company_name', 'current_price']
+        widgets = {
+            'ticker': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter stock ticker'}),
+            'company_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter company name'}),
+            'current_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter current price'}),
+        }
+
+class TransactionForm(forms.ModelForm):
+    class Meta:
+        model = Transaction
+        fields = ['stock', 'transaction_type', 'shares', 'price', 'date']
+        widgets = {
+            'stock': forms.Select(attrs={'class': 'form-control'}),
+            'transaction_type': forms.Select(attrs={'class': 'form-control'}),
+            'shares': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter number of shares'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter transaction price'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }

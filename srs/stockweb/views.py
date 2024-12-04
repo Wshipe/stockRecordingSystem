@@ -3,12 +3,13 @@ from django.http import HttpResponse
 from . import views
 from .models import NotificationPreference
 from celery import shared_task
+from django.utils.timezone import now
 from .models import Notification
 from .models import Stock, Transaction
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from django.shortcuts import render, redirect
-from .forms import CreateUserForm, LoginForm, NoteForm, AddStockForm
+from .forms import CreateUserForm, LoginForm, NoteForm
 from django.contrib.auth.decorators import login_required
 from .forms import NoteForm
 from .models import Note
@@ -19,6 +20,7 @@ from .models import Stock, WatchListStock
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from .forms import StockForm, TransactionForm, AddStockToWatchListForm
 
 def homepage(request):
     return render(request, 'stockweb/index.html')
@@ -110,16 +112,38 @@ def delete_note(request, note_id):
 
 
 #event notification
+
+def condition_met(stock, condition):
+    try:
+
+        field, operator, value = condition.split(' ')
+        value = float(value)
+
+
+        stock_value = getattr(stock, field.lower(), None)
+
+
+        if operator == '>':
+            return stock_value > value
+        elif operator == '<':
+            return stock_value < value
+        elif operator == '=':
+            return stock_value == value
+    except Exception as e:
+        print(f"Error parsing condition: {e}")
+        return False
+
+    return False
+
 @login_required
 def notification_preferences(request):
     if request.method == "POST":
         email = request.POST.get('email_notifications') == 'on'
         sms = request.POST.get('sms_notifications') == 'on'
-        in_app = request.POST.get('in_app_notifications') == 'on'
+
         preferences, _ = NotificationPreference.objects.get_or_create(user=request.user)
         preferences.email_notifications = email
         preferences.sms_notifications = sms
-        preferences.in_app_notifications = in_app
         preferences.save()
         return redirect('preferences')
     preferences, _ = NotificationPreference.objects.get_or_create(user=request.user)
@@ -133,28 +157,35 @@ def view_notifications(request):
 @shared_task
 def check_notifications():
     notifications = Notification.objects.filter(status='Pending')
-    #for notification in notifications:
-        # Logic to check stock condition
-        #if condition_met(notification.stock, notification.condition):
-        #    send_notification(notification.user, notification)
-        #    notification.status = 'Sent'
-        #    notification.save()
+    for notification in notifications:
+         #Logic to check stock condition
+        if condition_met(notification.stock, notification.condition):
+            send_notification(notification.user, notification)
+            notification.status = 'Sent'
+            notification.save()
 
 #search
 @login_required
 def search(request):
-    query = request.GET.get('query')
-    filter_type = request.GET.get('filter_type')  # e.g., 'sector' or 'date'
+    query = request.GET.get('query', '').strip()
+    filter_type = request.GET.get('filter_type', 'ticker')
     results = []
 
-    if filter_type == 'sector':
-        results = Stock.objects.filter(sector=query)  # Assuming a 'sector' field in Stock
-    elif filter_type == 'date':
-        results = Transaction.objects.filter(date=query)
-    elif filter_type == 'ticker':
-        results = Stock.objects.filter(ticker=query)
+    if query:
+        if filter_type == 'ticker':
+            results = Stock.objects.filter(ticker=query)
+        elif filter_type == 'company_name':
+            results = Stock.objects.filter(company_name=query)
+        elif filter_type == 'current_price':
+            results = Stock.objects.filter(current_price=query)
+    else:
+        # Show all transactions or stocks if no query is provided
+        results = Stock.objects.all()
+    return render(request, 'stockweb/search.html', {'results': results, 'query': query})
 
-    return render(request, 'stockweb/search.html', {'results': results})
+
+
+
 
 @login_required
 def export_to_pdf(request):
@@ -195,22 +226,25 @@ def create_watchlist(request):
     return render(request, 'stockweb/create_watchlist.html', {'form': form})
 
 
-def add_stock_to_watchlist(request, stock_id):
-    stock = Stock.objects.get(id=stock_id)
-    if request.method == "POST":
-        form = AddStockForm(request.user, request.POST)
+
+def add_stock_to_watchlist(request, watchlist_id):
+    watchlist = get_object_or_404(WatchList, id=watchlist_id, user=request.user)
+    if request.method == 'POST':
+        form = AddStockToWatchListForm(request.user, watchlist, request.POST)
         if form.is_valid():
-            watchlist = form.cleaned_data['watchlist_id']
+            stock = form.cleaned_data['stock']
             WatchListStock.objects.create(watchlist=watchlist, stock=stock)
             return redirect('watchlist_detail', pk=watchlist.id)
     else:
-        form = AddStockForm(request.user)
-    return render(request, 'stockweb/add_stock.html', {'form': form, 'stock': stock})
+        form = AddStockToWatchListForm(request.user, watchlist)
+    return render(request, 'stockweb/add_stock.html', {'form': form, 'watchlist': watchlist})
 
 
-def delete_stock_from_watchlist(request, stock_id, watchlist_id):
-    WatchListStock.objects.filter(watchlist_id=watchlist_id, stock_id=stock_id).delete()
-    return redirect('watchlist_detail', pk=watchlist_id)
+
+def delete_stock_from_watchlist(request, watchlist_id, stock_id):
+    watchlist = get_object_or_404(WatchList, id=watchlist_id, user=request.user)
+    WatchListStock.objects.filter(watchlist=watchlist, stock_id=stock_id).delete()
+    return redirect('watchlist_detail', pk=watchlist.id)
 
 
 def delete_watchlist(request, pk):
@@ -218,10 +252,33 @@ def delete_watchlist(request, pk):
     return redirect('watchlist_list')
 
 def watchlist_detail(request, pk):
-
-    watchlist = get_object_or_404(WatchList, pk=pk, user=request.user)
+    watchlist = get_object_or_404(WatchList, id=pk, user=request.user)
     return render(request, 'stockweb/watchlist_detail.html', {'watchlist': watchlist})
 
 def watchlist_list(request):
     watchlists = WatchList.objects.filter(user=request.user)
     return render(request, 'stockweb/watchlist_list.html', {'watchlists': watchlists})
+
+@login_required
+def add_stock(request):
+    if request.method == 'POST':
+        form = StockForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')  # Redirect to dashboard after saving
+    else:
+        form = StockForm()
+    return render(request, 'stockweb/add_stock.html', {'form': form})
+
+@login_required
+def add_transaction(request):
+    if request.method == 'POST':
+        form = TransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.user = request.user  # Assign the transaction to the logged-in user
+            transaction.save()
+            return redirect('dashboard')  # Redirect to dashboard after saving
+    else:
+        form = TransactionForm()
+    return render(request, 'stockweb/add_transaction.html', {'form': form})

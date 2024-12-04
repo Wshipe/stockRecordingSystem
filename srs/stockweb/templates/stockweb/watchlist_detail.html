@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ watchlist.name }} Details</title>
+</head>
+<body>
+    <h1>Watchlist: {{ watchlist.name }}</h1>
+    <ul>
+        {% for item in watchlist.stocks.all %}
+        <li>
+            {{ item.stock.company_name }} ({{ item.stock.ticker }}) - ${{ item.stock.current_price }}
+            <form method="POST" action="{% url 'delete_stock_from_watchlist' watchlist.id item.stock.id %}">
+                {% csrf_token %}
+                <button type="submit">Remove Stock</button>
+            </form>
+        </li>
+        {% empty %}
+        <li>No stocks added to this watchlist yet.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'add_stock_to_watchlist' watchlist.id %}">Add Stock</a>
+    <form method="POST" action="{% url 'delete_watchlist' watchlist.id %}">
+        {% csrf_token %}
+        <button type="submit" class="text-danger">Delete Watchlist</button>
+    </form>
+    <br>
+    <a href="{% url 'watchlist_list' %}">Back to Watchlists</a>
+</body>
+</html>

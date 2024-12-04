@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Add Transaction</title>
+</head>
+<body>
+    <a href="{% url 'dashboard' %}">Back to Dashboard</a>
+    <h1>Add a New Transaction</h1>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+
+</body>
+</html>
