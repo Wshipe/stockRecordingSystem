@@ -15,4 +15,4 @@ urlpatterns = [
     path('watchlist/add_stock/<int:stock_id>/', views.add_stock_to_watchlist, name='add_stock'),
     path('watchlist/<int:watchlist_id>/delete_stock/<int:stock_id>/', views.delete_stock_from_watchlist, name='delete_stock_from_watchlist'),
 ]
-# comment
+# commentt
