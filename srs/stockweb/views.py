@@ -7,6 +7,8 @@ from .models import Notification
 from .models import Stock, Transaction
 from io import BytesIO
 from reportlab.pdfgen import canvas
+from weasyprint import HTML
+from django.contrib import messages
 from django.shortcuts import render, redirect
 from .forms import CreateUserForm, LoginForm, NoteForm, AddStockForm
 from django.contrib.auth.decorators import login_required
@@ -33,6 +35,7 @@ def register(request):
             return redirect('my-login')
 
     context = {'registerform': form}
+
     return render(request, 'stockweb/register.html', context=context)
 def my_login(request):
     form = LoginForm()
@@ -123,12 +126,12 @@ def notification_preferences(request):
         preferences.save()
         return redirect('preferences')
     preferences, _ = NotificationPreference.objects.get_or_create(user=request.user)
-    return render(request, 'preferences.html', {'preferences': preferences})
+    return render(request, 'stockweb/preferences.html', {'preferences': preferences})
 
 @login_required
 def view_notifications(request):
     notifications = Notification.objects.filter(user=request.user)
-    return render(request, 'notifications.html', {'notifications': notifications})
+    return render(request, 'stockweb/notifications.html', {'notifications': notifications})
 
 @shared_task
 def check_notifications():
@@ -154,29 +157,15 @@ def search(request):
     elif filter_type == 'ticker':
         results = Stock.objects.filter(ticker=query)
 
-    return render(request, 'search.html', {'results': results})
+    return render(request, 'stockweb/search.html', {'results': results})
 
-@login_required
 def export_to_pdf(request):
     query = request.GET.get('query')
     results = Transaction.objects.filter(stock__ticker=query)
-
+    html = render_to_string('transactions_pdf.html', {'results': results})
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{query}_transactions.pdf"'
-    buffer = BytesIO()
-    pdf = canvas.Canvas(buffer)
-    pdf.drawString(100, 800, f"Transactions for {query}")
-
-    y = 750
-    for result in results:
-        pdf.drawString(100, y,
-                       f"Date: {result.date}, Type: {result.transaction_type}, Shares: {result.shares}, Price: ${result.price}")
-        y -= 20
-
-    pdf.save()
-    buffer.seek(0)
-    response.write(buffer.getvalue())
-    buffer.close()
+    HTML(string=html).write_pdf(response)
     return response
 
 
@@ -189,10 +178,13 @@ def create_watchlist(request):
             watchlist = form.save(commit=False)
             watchlist.user = request.user
             watchlist.save()
-            return redirect('watchlist_list')  # Redirect to list of watchlists
+            messages.success(request, "Watchlist created successfully!")
+            return redirect('watchlist_list')
+        else:
+            messages.error(request, "Failed to create watchlist. Please try again.")
     else:
         form = WatchListForm()
-    return render(request, 'create_watchlist.html', {'form': form})
+    return render(request, 'stockweb/create_watchlist.html', {'form': form})
 
 
 def add_stock_to_watchlist(request, stock_id):
@@ -205,7 +197,7 @@ def add_stock_to_watchlist(request, stock_id):
             return redirect('watchlist_detail', pk=watchlist.id)
     else:
         form = AddStockForm(request.user)
-    return render(request, 'add_stock.html', {'form': form, 'stock': stock})
+    return render(request, 'stockweb/add_stock.html', {'form': form, 'stock': stock})
 
 
 def delete_stock_from_watchlist(request, stock_id, watchlist_id):
@@ -218,9 +210,15 @@ def delete_watchlist(request, pk):
     return redirect('watchlist_list')
 
 def watchlist_detail(request, pk):
-
     watchlist = get_object_or_404(WatchList, pk=pk, user=request.user)
-    return render(request, 'watchlist_detail.html', {'watchlist': watchlist})
+    return render(request, 'stockweb/watchlist_detail.html', {'watchlist': watchlist})
+
+def watchlist_list(request):
+    watchlists = WatchList.objects.filter(user=request.user)
+    return render(request, 'stockweb/watchlist_list.html', {'watchlists': watchlists})
+
+
+
 
 
 

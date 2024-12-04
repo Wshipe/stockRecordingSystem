@@ -1,21 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>My Watch Lists</title>
-</head>
-<body>
-    <h1>My Watch Lists</h1>
-    <a href="{% url 'create_watchlist' %}">Create Watch List</a>
-    <ul>
+{% extends "stockweb/dashboard.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>My Watchlists</h1>
+    <a href="{% url 'create_watchlist' %}" class="btn btn-success mb-3">Create New Watchlist</a>
+    <ul class="list-group">
         {% for watchlist in watchlists %}
-        <li>
-            <a href="{% url 'watchlist_detail' watchlist.id %}">{{ watchlist.name }}</a>
-            <form method="POST" action="{% url 'delete_watchlist' watchlist.id %}" style="display:inline;">
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ watchlist.name }}
+            <form method="POST" action="{% url 'delete_watchlist' watchlist.id %}" style="margin: 0;">
                 {% csrf_token %}
-                <button type="submit">Delete</button>
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
             </form>
         </li>
         {% endfor %}
     </ul>
-</body>
-</html>
+</div>
+{% endblock %}

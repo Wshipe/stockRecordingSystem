@@ -1,30 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>{{ watchlist.name }}</title>
-</head>
-<body>
+{% extends "stockweb/dashboard.html" %}
+
+{% block content %}
+<div class="container mt-4">
     <h1>Watch List: {{ watchlist.name }}</h1>
-    <a href="{% url 'create_watchlist' %}">Back to My Watch Lists</a>
-    <ul>
+    <ul class="list-group">
         {% for item in watchlist.stocks.all %}
-        <li>
+        <li class="list-group-item">
             <strong>{{ item.stock.company_name }} ({{ item.stock.ticker }})</strong><br>
             Price: ${{ item.stock.current_price }}<br>
             Gain/Loss: {{ item.stock.gain_loss_percentage }}%<br>
-            <form method="POST" action="{% url 'delete_stock_from_watchlist' item.stock.id watchlist.id %}" style="display:inline;">
+            <form method="POST" action="{% url 'delete_stock_from_watchlist' item.stock.id watchlist.id %}">
                 {% csrf_token %}
-                <button type="submit">Remove Stock</button>
+                <button type="submit" class="btn btn-danger btn-sm">Remove Stock</button>
             </form>
         </li>
         {% empty %}
-        <li>No stocks in this watchlist yet. <a href="{% url 'search' %}">Add Stocks</a></li>
+        <li class="list-group-item">No stocks in this watchlist yet. <a href="{% url 'search' %}">Add Stocks</a></li>
         {% endfor %}
     </ul>
-    <form method="POST" action="{% url 'delete_watchlist' watchlist.id %}" style="display:inline;">
+    <form method="POST" action="{% url 'delete_watchlist' watchlist.id %}" style="margin-top: 20px;">
         {% csrf_token %}
-        <button type="submit">Delete Watch List</button>
+        <button type="submit" class="btn btn-danger">Delete Watch List</button>
     </form>
-</body>
-
-</html>
+</div>
+{% endblock %}
