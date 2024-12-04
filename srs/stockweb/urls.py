@@ -27,4 +27,4 @@ urlpatterns = [
     path('notes/edit/<int:note_id>/', views.edit_note, name='edit-note'),
     path('notes/delete/<int:note_id>/', views.delete_note, name='delete-note'),
 ]
-# commentt
+# comment
