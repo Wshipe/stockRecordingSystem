@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ watchlist.name }}</title>
+</head>
+<body>
+    <h1>{{ watchlist.name }}</h1>
+    <ul>
+        {% for item in watchlist.stocks.all %}
+        <li>
+            {{ item.stock.company_name }} ({{ item.stock.ticker }}): ${{ item.stock.current_price }} | {{ item.stock.gain_loss_percentage }}%
+            <form method="POST" action="{% url 'delete_stock_from_watchlist' item.stock.id watchlist.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit">Remove</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'add_stock' stock_id=stock.id %}">Add Stock</a>
+</body>
+</html>

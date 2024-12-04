@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django import forms
 from django.forms.widgets import TextInput,PasswordInput
 from .models import Note
+from .models import WatchList
+from .models import WatchListStock
 
 
 class CreateUserForm(UserCreationForm):
@@ -29,3 +31,24 @@ class NoteForm(forms.ModelForm):
                 'rows': 5
             }),
         }
+
+
+class WatchListForm(forms.ModelForm):
+    class Meta:
+        model = WatchList
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter watch list name'}),
+        }
+
+class AddStockForm(forms.Form):
+    stock_id = forms.IntegerField(widget=forms.HiddenInput())  # Hidden field for selected stock
+    watchlist_id = forms.ModelChoiceField(
+        queryset=None,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Select Watch List"
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['watchlist_id'].queryset = WatchList.objects.filter(user=user)
