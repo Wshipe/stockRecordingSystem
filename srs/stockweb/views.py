@@ -8,57 +8,48 @@ from .models import Stock, Transaction
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from django.shortcuts import render, redirect
-from .forms import CreateUserForm, LoginForm, NoteForm
-from django.contrib.auth.models import auth
-from django.contrib.auth import authenticate, login, logout
+from .forms import CreateUserForm, LoginForm, NoteForm, AddStockForm
 from django.contrib.auth.decorators import login_required
 from .forms import NoteForm
 from .models import Note
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseForbidden
 from .forms import WatchListForm
 from .models import WatchList
 from .models import Stock, WatchListStock
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
 
 def homepage(request):
     return render(request, 'stockweb/index.html')
 
 def register(request):
-
     form = CreateUserForm()
 
     if request.method == 'POST':
-
         form = CreateUserForm(request.POST)
-
         if form.is_valid():
             form.save()
             return redirect('my-login')
 
     context = {'registerform': form}
-
-
     return render(request, 'stockweb/register.html', context=context)
-
 def my_login(request):
-
     form = LoginForm()
 
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
-
         if form.is_valid():
             username = request.POST.get('username')
             password = request.POST.get('password')
 
-            user = auth.authenticate(username=username, password=password)
+            user = authenticate(username=username, password=password)
 
             if user is not None:
-                auth.login(request, user)
+                login(request, user)
                 return redirect('dashboard')
 
     context = {'loginform': form}
-
     return render(request, 'stockweb/my-login.html', context=context)
 
 @login_required(login_url='my-login')
@@ -68,18 +59,16 @@ def dashboard(request):
 def transactions(request):
     return render(request, 'stockweb/transactions.html')
 
-
 def user_logout(request):
-    auth.logout(request)
+    logout(request)
     return redirect('/')
 
 def notes(request):
     notes = Note.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'stockweb/notes.html',{'notes': notes})
+    return render(request, 'stockweb/notes.html', {'notes': notes})
 
 @login_required
 def create_note(request):
-
     if request.method == 'POST':
         form = NoteForm(request.POST)
         if form.is_valid():
@@ -141,17 +130,15 @@ def view_notifications(request):
     notifications = Notification.objects.filter(user=request.user)
     return render(request, 'notifications.html', {'notifications': notifications})
 
-
-#@shared_task
-#def check_notifications():
-#    notifications = Notification.objects.filter(status='Pending')
-#    for notification in notifications:
-#        # Logic to check stock condition
-#        if condition_met(notification.stock, notification.condition):
-#            send_notification(notification.user, notification)
-#            notification.status = 'Sent'
-#            notification.save()
-
+@shared_task
+def check_notifications():
+    notifications = Notification.objects.filter(status='Pending')
+    #for notification in notifications:
+        # Logic to check stock condition
+        #if condition_met(notification.stock, notification.condition):
+        #    send_notification(notification.user, notification)
+        #    notification.status = 'Sent'
+        #    notification.save()
 
 #search
 @login_required

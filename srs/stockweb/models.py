@@ -1,17 +1,7 @@
-from django.contrib.auth.models import AbstractUser, User
 from django.db import models
 from django.contrib.auth.models import User
 
 # Create your models here.
-class CustomerUser(AbstractUser):
-    user_ID = models.BigAutoField(auto_created=True, primary_key=True, serialize=False)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    email = models.EmailField(unique=True)
-    phone_number = models.CharField(max_length=50)
-    password = models.CharField(max_length=50)
-    security_question = models.CharField(max_length=50)
-
 
 class Stock(models.Model):
     ticker = models.CharField(max_length=10)  # symbols
@@ -73,7 +63,7 @@ class WatchListStock(models.Model):
 
 class TradHistory(models.Model):
     #Market symbol from watch list * Unsure of field type
-    Watchlist_ID = models.ForeignKey(Watchlist)
+    #Watchlist_ID = models.ForeignKey(Watchlist)
     
     #Date Stock was bought * copied field from notes table unsure of logic
     Date_Bought = models.DateTimeField(auto_now_add = True)
