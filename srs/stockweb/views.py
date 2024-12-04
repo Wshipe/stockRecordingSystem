@@ -7,8 +7,6 @@ from .models import Notification
 from .models import Stock, Transaction
 from io import BytesIO
 from reportlab.pdfgen import canvas
-from weasyprint import HTML
-from django.contrib import messages
 from django.shortcuts import render, redirect
 from .forms import CreateUserForm, LoginForm, NoteForm, AddStockForm
 from django.contrib.auth.decorators import login_required
@@ -35,7 +33,6 @@ def register(request):
             return redirect('my-login')
 
     context = {'registerform': form}
-
     return render(request, 'stockweb/register.html', context=context)
 def my_login(request):
     form = LoginForm()
@@ -159,13 +156,27 @@ def search(request):
 
     return render(request, 'stockweb/search.html', {'results': results})
 
+@login_required
 def export_to_pdf(request):
     query = request.GET.get('query')
     results = Transaction.objects.filter(stock__ticker=query)
-    html = render_to_string('transactions_pdf.html', {'results': results})
+
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{query}_transactions.pdf"'
-    HTML(string=html).write_pdf(response)
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer)
+    pdf.drawString(100, 800, f"Transactions for {query}")
+
+    y = 750
+    for result in results:
+        pdf.drawString(100, y,
+                       f"Date: {result.date}, Type: {result.transaction_type}, Shares: {result.shares}, Price: ${result.price}")
+        y -= 20
+
+    pdf.save()
+    buffer.seek(0)
+    response.write(buffer.getvalue())
+    buffer.close()
     return response
 
 
@@ -178,10 +189,7 @@ def create_watchlist(request):
             watchlist = form.save(commit=False)
             watchlist.user = request.user
             watchlist.save()
-            messages.success(request, "Watchlist created successfully!")
-            return redirect('watchlist_list')
-        else:
-            messages.error(request, "Failed to create watchlist. Please try again.")
+            return redirect('watchlist_list')  # Redirect to list of watchlists
     else:
         form = WatchListForm()
     return render(request, 'stockweb/create_watchlist.html', {'form': form})
@@ -210,16 +218,10 @@ def delete_watchlist(request, pk):
     return redirect('watchlist_list')
 
 def watchlist_detail(request, pk):
+
     watchlist = get_object_or_404(WatchList, pk=pk, user=request.user)
     return render(request, 'stockweb/watchlist_detail.html', {'watchlist': watchlist})
 
 def watchlist_list(request):
     watchlists = WatchList.objects.filter(user=request.user)
     return render(request, 'stockweb/watchlist_list.html', {'watchlists': watchlists})
-
-
-
-
-
-
-#commentt

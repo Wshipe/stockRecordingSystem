@@ -39,10 +39,7 @@ class WatchListForm(forms.ModelForm):
         model = WatchList
         fields = ['name']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter watchlist name'}),
-        }
-        labels = {
-            'name': 'Watchlist Name',
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter watch list name'}),
         }
 
 class AddStockForm(forms.Form):
