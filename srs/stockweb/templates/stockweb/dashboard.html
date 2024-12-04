@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <meta charset="UTF-8">
     <title>Dashboard</title>
     <link
@@ -24,6 +25,7 @@
             color: #fff;
             flex-shrink: 0;
             padding-top: 20px;
+            margin-right: 20px;
         }
         .sidebar .nav-link {
             color: #adb5bd;
@@ -51,7 +53,12 @@
         .srssym {
             padding-left: 8px;
         }
+        .btna {
+
+        }
     </style>
+    {% block head %}
+    {% endblock %}
 </head>
 <body>
     <nav  class="sidebar d-flex flex-column">
