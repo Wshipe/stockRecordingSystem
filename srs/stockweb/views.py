@@ -16,6 +16,9 @@ from .forms import NoteForm
 from .models import Note
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseForbidden
+from .forms import WatchListForm
+from .models import WatchList
+from .models import Stock, WatchListStock
 
 def homepage(request):
     return render(request, 'stockweb/index.html')
@@ -65,8 +68,6 @@ def dashboard(request):
 def transactions(request):
     return render(request, 'stockweb/transactions.html')
 
-def watchlist(request):
-    return render(request, 'stockweb/watchlist.html')
 
 def user_logout(request):
     auth.logout(request)
@@ -186,5 +187,41 @@ def export_to_pdf(request):
     response.write(buffer.getvalue())
     buffer.close()
     return response
+
+
+def create_watchlist(request):
+    if request.method == "POST":
+        form = WatchListForm(request.POST)
+        if form.is_valid():
+            watchlist = form.save(commit=False)
+            watchlist.user = request.user
+            watchlist.save()
+            return redirect('watchlist_list')  # Redirect to list of watchlists
+    else:
+        form = WatchListForm()
+    return render(request, 'create_watchlist.html', {'form': form})
+
+def add_stock_to_watchlist(request, stock_id):
+    stock = Stock.objects.get(id=stock_id)
+    if request.method == "POST":
+        form = AddStockForm(request.user, request.POST)
+        if form.is_valid():
+            watchlist = form.cleaned_data['watchlist_id']
+            WatchListStock.objects.create(watchlist=watchlist, stock=stock)
+            return redirect('watchlist_detail', pk=watchlist.id)
+    else:
+        form = AddStockForm(request.user)
+    return render(request, 'add_stock.html', {'form': form, 'stock': stock})
+
+
+def delete_stock_from_watchlist(request, stock_id, watchlist_id):
+    WatchListStock.objects.filter(watchlist_id=watchlist_id, stock_id=stock_id).delete()
+    return redirect('watchlist_detail', pk=watchlist_id)
+
+def delete_watchlist(request, pk):
+    WatchList.objects.filter(id=pk, user=request.user).delete()
+    return redirect('watchlist_list')
+
+
 
 #comment

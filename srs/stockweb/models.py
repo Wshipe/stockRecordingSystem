@@ -14,8 +14,13 @@ class CustomerUser(AbstractUser):
 
 
 class Stock(models.Model):
-    ticker = models.CharField(max_length=10)
-    name = models.CharField(max_length=100)
+    ticker = models.CharField(max_length=10)  # symbols
+    company_name = models.CharField(max_length=255)
+    current_price = models.DecimalField(max_digits=10, decimal_places=2)
+    gain_loss_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.company_name} ({self.ticker})"
 
 #event notification
 class NotificationPreference(models.Model):
@@ -51,11 +56,19 @@ class Note(models.Model):
     def __str__(self):
         return self.title if self.title else f"Note {self.id}"
     
-class Watchlist(models.Model):
-    Watchlist_ID = models.AutoField(primary_key=True)
-    Watchlist_name = models.CharField(max_length= 32)
-    Market_Symbol = models.CharField(max_length=10)
-    Current_Symbol_price = models.FloatField()
+class WatchList(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watchlists')
+    name = models.CharField(max_length=100)  # e.g., "Tech Stocks"
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class WatchListStock(models.Model):
+    watchlist = models.ForeignKey(WatchList, on_delete=models.CASCADE, related_name='stocks')
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
     
 
 class TradHistory(models.Model):
