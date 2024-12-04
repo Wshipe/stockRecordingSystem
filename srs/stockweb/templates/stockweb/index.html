@@ -1,9 +1,112 @@
+<!DOCTYPE html>
 <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Recording System</title>
+    <style>
+        /* General Styles */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
 
-<h1>
-    Home Page
-</h1>
+        /* Container Styling */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 30px;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            width: 350px;
+            text-align: center;
+        }
 
-    <a href="{% url 'my-login' %}" >Log In</a>
+        /* Heading Styling */
+        .srssign {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #333333;
+        }
 
+        /* Description Styling */
+        .description {
+            font-size: 16px;
+            margin-bottom: 30px;
+            color: #555555;
+        }
+
+        /* Button Group Styling */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        /* Button Styling */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            margin-bottom: 15px;
+            background-color: #007BFF;
+            color: #ffffff;
+            text-decoration: none;
+            text-align: center;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:last-child {
+            margin-bottom: 0;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 400px) {
+            .login-container {
+                width: 90%;
+                padding: 30px 20px;
+            }
+
+            .srssign {
+                font-size: 24px;
+            }
+
+            .description {
+                font-size: 14px;
+            }
+
+            .btn {
+                font-size: 14px;
+                padding: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h1 class="srssign">Stock Recording System</h1>
+    <p class="description">In order to use our services, please log in or create an account!</p>
+    <div class="button-group">
+        <a href="{% url 'my-login' %}" class="btn">Log In</a>
+        <a href="{% url 'register' %}" class="btn">Create An Account</a>
+    </div>
+</div>
+
+</body>
 </html>

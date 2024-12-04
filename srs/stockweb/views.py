@@ -8,54 +8,48 @@ from .models import Stock, Transaction
 from io import BytesIO
 from reportlab.pdfgen import canvas
 from django.shortcuts import render, redirect
-from .forms import CreateUserForm, LoginForm, NoteForm
-from django.contrib.auth.models import auth
-from django.contrib.auth import authenticate, login, logout
+from .forms import CreateUserForm, LoginForm, NoteForm, AddStockForm
 from django.contrib.auth.decorators import login_required
 from .forms import NoteForm
 from .models import Note
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseForbidden
+from .forms import WatchListForm
+from .models import WatchList
+from .models import Stock, WatchListStock
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
 
 def homepage(request):
     return render(request, 'stockweb/index.html')
 
 def register(request):
-
     form = CreateUserForm()
 
     if request.method == 'POST':
-
         form = CreateUserForm(request.POST)
-
         if form.is_valid():
             form.save()
             return redirect('my-login')
 
     context = {'registerform': form}
-
-
     return render(request, 'stockweb/register.html', context=context)
-
 def my_login(request):
-
     form = LoginForm()
 
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
-
         if form.is_valid():
             username = request.POST.get('username')
             password = request.POST.get('password')
 
-            user = auth.authenticate(username=username, password=password)
+            user = authenticate(username=username, password=password)
 
             if user is not None:
-                auth.login(request, user)
+                login(request, user)
                 return redirect('dashboard')
 
     context = {'loginform': form}
-
     return render(request, 'stockweb/my-login.html', context=context)
 
 @login_required(login_url='my-login')
@@ -65,20 +59,16 @@ def dashboard(request):
 def transactions(request):
     return render(request, 'stockweb/transactions.html')
 
-def watchlist(request):
-    return render(request, 'stockweb/watchlist.html')
-
 def user_logout(request):
-    auth.logout(request)
+    logout(request)
     return redirect('/')
 
 def notes(request):
     notes = Note.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'stockweb/notes.html',{'notes': notes})
+    return render(request, 'stockweb/notes.html', {'notes': notes})
 
 @login_required
 def create_note(request):
-
     if request.method == 'POST':
         form = NoteForm(request.POST)
         if form.is_valid():
@@ -120,6 +110,7 @@ def delete_note(request, note_id):
 
 
 #event notification
+@login_required
 def notification_preferences(request):
     if request.method == "POST":
         email = request.POST.get('email_notifications') == 'on'
@@ -134,22 +125,23 @@ def notification_preferences(request):
     preferences, _ = NotificationPreference.objects.get_or_create(user=request.user)
     return render(request, 'preferences.html', {'preferences': preferences})
 
+@login_required
 def view_notifications(request):
     notifications = Notification.objects.filter(user=request.user)
     return render(request, 'notifications.html', {'notifications': notifications})
 
-
 @shared_task
 def check_notifications():
     notifications = Notification.objects.filter(status='Pending')
-    for notification in notifications:
+    #for notification in notifications:
         # Logic to check stock condition
-        if condition_met(notification.stock, notification.condition):
-            send_notification(notification.user, notification)
-            notification.status = 'Sent'
-            notification.save()
+        #if condition_met(notification.stock, notification.condition):
+        #    send_notification(notification.user, notification)
+        #    notification.status = 'Sent'
+        #    notification.save()
 
 #search
+@login_required
 def search(request):
     query = request.GET.get('query')
     filter_type = request.GET.get('filter_type')  # e.g., 'sector' or 'date'
@@ -164,7 +156,7 @@ def search(request):
 
     return render(request, 'search.html', {'results': results})
 
-
+@login_required
 def export_to_pdf(request):
     query = request.GET.get('query')
     results = Transaction.objects.filter(stock__ticker=query)
@@ -187,4 +179,49 @@ def export_to_pdf(request):
     buffer.close()
     return response
 
-#comment
+
+# watchlist
+
+def create_watchlist(request):
+    if request.method == "POST":
+        form = WatchListForm(request.POST)
+        if form.is_valid():
+            watchlist = form.save(commit=False)
+            watchlist.user = request.user
+            watchlist.save()
+            return redirect('watchlist_list')  # Redirect to list of watchlists
+    else:
+        form = WatchListForm()
+    return render(request, 'create_watchlist.html', {'form': form})
+
+
+def add_stock_to_watchlist(request, stock_id):
+    stock = Stock.objects.get(id=stock_id)
+    if request.method == "POST":
+        form = AddStockForm(request.user, request.POST)
+        if form.is_valid():
+            watchlist = form.cleaned_data['watchlist_id']
+            WatchListStock.objects.create(watchlist=watchlist, stock=stock)
+            return redirect('watchlist_detail', pk=watchlist.id)
+    else:
+        form = AddStockForm(request.user)
+    return render(request, 'add_stock.html', {'form': form, 'stock': stock})
+
+
+def delete_stock_from_watchlist(request, stock_id, watchlist_id):
+    WatchListStock.objects.filter(watchlist_id=watchlist_id, stock_id=stock_id).delete()
+    return redirect('watchlist_detail', pk=watchlist_id)
+
+
+def delete_watchlist(request, pk):
+    WatchList.objects.filter(id=pk, user=request.user).delete()
+    return redirect('watchlist_list')
+
+def watchlist_detail(request, pk):
+
+    watchlist = get_object_or_404(WatchList, pk=pk, user=request.user)
+    return render(request, 'watchlist_detail.html', {'watchlist': watchlist})
+
+
+
+#commentt
