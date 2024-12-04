@@ -4,18 +4,26 @@
     <title>{{ watchlist.name }}</title>
 </head>
 <body>
-    <h1>{{ watchlist.name }}</h1>
+    <h1>Watch List: {{ watchlist.name }}</h1>
+    <a href="{% url 'create_watchlist' %}">Back to My Watch Lists</a>
     <ul>
         {% for item in watchlist.stocks.all %}
         <li>
-            {{ item.stock.company_name }} ({{ item.stock.ticker }}): ${{ item.stock.current_price }} | {{ item.stock.gain_loss_percentage }}%
+            <strong>{{ item.stock.company_name }} ({{ item.stock.ticker }})</strong><br>
+            Price: ${{ item.stock.current_price }}<br>
+            Gain/Loss: {{ item.stock.gain_loss_percentage }}%<br>
             <form method="POST" action="{% url 'delete_stock_from_watchlist' item.stock.id watchlist.id %}" style="display:inline;">
                 {% csrf_token %}
-                <button type="submit">Remove</button>
+                <button type="submit">Remove Stock</button>
             </form>
         </li>
+        {% empty %}
+        <li>No stocks in this watchlist yet. <a href="{% url 'search' %}">Add Stocks</a></li>
         {% endfor %}
     </ul>
-    <a href="{% url 'add_stock' stock_id=stock.id %}">Add Stock</a>
+    <form method="POST" action="{% url 'delete_watchlist' watchlist.id %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit">Delete Watch List</button>
+    </form>
 </body>
 </html>

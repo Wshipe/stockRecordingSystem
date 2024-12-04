@@ -121,6 +121,7 @@ def delete_note(request, note_id):
 
 
 #event notification
+@login_required
 def notification_preferences(request):
     if request.method == "POST":
         email = request.POST.get('email_notifications') == 'on'
@@ -135,22 +136,25 @@ def notification_preferences(request):
     preferences, _ = NotificationPreference.objects.get_or_create(user=request.user)
     return render(request, 'preferences.html', {'preferences': preferences})
 
+@login_required
 def view_notifications(request):
     notifications = Notification.objects.filter(user=request.user)
     return render(request, 'notifications.html', {'notifications': notifications})
 
 
-@shared_task
-def check_notifications():
-    notifications = Notification.objects.filter(status='Pending')
-    for notification in notifications:
-        # Logic to check stock condition
-        if condition_met(notification.stock, notification.condition):
-            send_notification(notification.user, notification)
-            notification.status = 'Sent'
-            notification.save()
+#@shared_task
+#def check_notifications():
+#    notifications = Notification.objects.filter(status='Pending')
+#    for notification in notifications:
+#        # Logic to check stock condition
+#        if condition_met(notification.stock, notification.condition):
+#            send_notification(notification.user, notification)
+#            notification.status = 'Sent'
+#            notification.save()
+
 
 #search
+@login_required
 def search(request):
     query = request.GET.get('query')
     filter_type = request.GET.get('filter_type')  # e.g., 'sector' or 'date'
@@ -165,7 +169,7 @@ def search(request):
 
     return render(request, 'search.html', {'results': results})
 
-
+@login_required
 def export_to_pdf(request):
     query = request.GET.get('query')
     results = Transaction.objects.filter(stock__ticker=query)
@@ -189,6 +193,8 @@ def export_to_pdf(request):
     return response
 
 
+# watchlist
+
 def create_watchlist(request):
     if request.method == "POST":
         form = WatchListForm(request.POST)
@@ -200,6 +206,7 @@ def create_watchlist(request):
     else:
         form = WatchListForm()
     return render(request, 'create_watchlist.html', {'form': form})
+
 
 def add_stock_to_watchlist(request, stock_id):
     stock = Stock.objects.get(id=stock_id)
@@ -218,9 +225,15 @@ def delete_stock_from_watchlist(request, stock_id, watchlist_id):
     WatchListStock.objects.filter(watchlist_id=watchlist_id, stock_id=stock_id).delete()
     return redirect('watchlist_detail', pk=watchlist_id)
 
+
 def delete_watchlist(request, pk):
     WatchList.objects.filter(id=pk, user=request.user).delete()
     return redirect('watchlist_list')
+
+def watchlist_detail(request, pk):
+
+    watchlist = get_object_or_404(WatchList, pk=pk, user=request.user)
+    return render(request, 'watchlist_detail.html', {'watchlist': watchlist})
 
 
 
